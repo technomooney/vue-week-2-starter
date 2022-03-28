@@ -8,13 +8,17 @@ th, tr {
 }
 
 .present {
-    color: gray;
+    color: lightgray;
     font-style: italic;
+    background-color: darkblue;
 }
 
 .absent {
     color: black;
     font-weight: bold;
+    background-color: mediumaquamarine;
 }
 
-
+[v-cloak] {
+    display: none;
+}

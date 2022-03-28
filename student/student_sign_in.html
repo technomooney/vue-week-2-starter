@@ -3,34 +3,36 @@
 
 <head>
     <title>Student Sign In</title>
-    <script src="https://unpkg.com/vue@next"></script>
+    <script src="https://unpkg.com/vue@next/dist/vue.global.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
         crossorigin="anonymous">
     <link rel="stylesheet" href="styles.css" type="text/css">
 </head>
 
 <body>
-    <div id="app">
-
-
+    <div id="app" v-cloak>
         <!-- TODO show errors from form validation -->
 
-
+        <div class="alert alert-danger" v-if="errors.length > 0">
+            <ul>
+                <li v-for="error in errors">{{error}}</li>
+            </ul>
+        </div>
         <div class="card add-student m-2 p-2">
             <h4 class="card-title">Add new student</h4>
 
             <div class="form-group">
                 <label for="name">Name</label>
                 <!-- TODO v-model newStudentName -->
-                <input id="name" class="form-control">
+                <input id="name" class="form-control" v-model.trim="newStudentName">
             </div>
             <div class="form-group">
                 <label for="starID">Star ID</label>
                 <!-- TODO v-model newStarID -->
-                <input id="starID" class="form-control">
+                <input id="starID" class="form-control" v-model.trim="newStarID">
             </div>
             <!-- TODO v-on:click event handler -->
-            <button class="btn btn-primary">Add</button>
+            <button class="btn btn-primary" @click="addStudent">Add</button>
         </div>
 
         <div class="card student-list m-2 p-2">
@@ -42,12 +44,28 @@
                         <th>StarID</th>
                         <th>Present?</th>
                     </tr>
+                    <tr v-for="student in students" v-bind:class="{present: student.present, absent: !student.present}">
+                        <td>{{student.name}}</td>
+                        <td>{{student.starID}}</td>
+                        <td>
+                            <input type="checkbox" @change="changedPresence(student)" v-model="student.present">
+                        </td>
+                    </tr>
 
                    <!-- TODO create table rows 
                    Each row will have a checkbox, bound to the app's data 
                    When the checkbox is checked/unchecked, the student will be signed in/out -->
 
                 </table>
+            </div>
+
+            <div v-if="mostRecentStudent.name">
+                <div class="alert alert-success" v-if="mostRecentStudent.present">
+                    Welcome, {{ mostRecentStudent.name }}! Glad to have you here.
+                </div>
+                <div class="alert alert-info" v-else>
+                    Goodbye, {{ mostRecentStudent.name }}! See you later.
+                </div>
             </div>
         </div>
 
@@ -58,6 +76,80 @@
     </div>
 
     <script>
+        let app =Vue.createApp({
+            data() {
+                return {
+                    newStudentName:'',
+                    newStarID:'',
+                    students: [
+                        {name: 'A. Student', starID: "aa1234bb", present:false},
+                        {name: 'B. Student', starID: "cc1234dd", present:false},
+                        {name: 'C. Student', starID: "ee1234ff", present:false}
+                    ],
+                    errors:[],
+                    mostRecentStudent: {}
+                }
+            },
+            methods: {
+                addStudent() {
+                    // found how to do regex test here
+                    // https://stackoverflow.com/questions/6603015/check-whether-a-string-matches-a-regex-in-js
+                    let starIDRegex = new RegExp("^[a-zA-Z]{2}[0-9]{4}[a-zA-Z]{2}$")
+                    this.errors=[]
+
+                    if (!this.newStudentName) {
+                        this.errors.push("Student name must be entered.")
+                    }
+                    if (!this.newStarID) {
+                        this.errors.push("StarID must be entered.")
+                    }
+                    if (!starIDRegex.test(this.newStarID)) {
+                        this.errors.push("StartID must have AA####BB format. ")
+                        console.log(starIDRegex.test(this.newStarID))
+                    }
+                    // found how to do this here
+                    // https://catalins.tech/array-of-objects-contains-a-value-in-javascript
+                    if (this.students.some(student => student.starID === this.newStarID)) {
+                        this.errors.push("Students list contains StarID \"" + this.newStarID + "\" already! please use a differnt StarID.")
+                    }
+                    if (this.errors.length === 0) {
+                        let student = {name: this.newStudentName, starID: this.newStarID, present: false}
+                        this.students.push(student)
+                        this.newStarID = ""
+                        this.newStudentName = ""
+                        this.students.sort(function (s1,s2) {
+                            //return pos num if s1 should be sorted after s2
+                            if (s1.name.toUpperCase() > s2.name.toUpperCase()) {
+                                return 1
+                            }
+                            // return neg num if s1 should be sorted before s2
+                            if (s1.name.toUpperCase() < s2.name.toUpperCase()) {
+                                return -1
+                            }
+                            if (s1.name.toUpperCase() === s2.name.toUpperCase()) {
+                                if (s1.starID > s2.starID) {
+                                    return 1
+                                }
+                                if (s1.starID < s2.starID) {
+                                    return -1
+                                }
+                            }
+                            //return 0 if order is equivalent
+                            return 0
+
+                        })
+                    }
+
+
+                },
+                changedPresence(student) {
+                    this.mostRecentStudent = student
+                }
+
+            }
+        })
+
+        app.mount("#app")
 
 
         // TODO Vue app     
